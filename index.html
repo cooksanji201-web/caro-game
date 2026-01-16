@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Caro Pro">
+    <meta name="theme-color" content="#0f0f23">
+    <meta name="description" content="Cờ Caro Pro - Game cờ Caro hấp dẫn với AI và chơi Online">
+
+    <title>Caro Pro - Cờ Caro Online</title>
+
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="manifest.json">
+
+    <!-- iOS Icons -->
+    <link rel="apple-touch-icon" href="icons/icon-192.png">
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="icons/icon-192.png">
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@400;500;600;700&display=swap"
+        rel="stylesheet">
+
+    <!-- Socket.io -->
+    <script src="/socket.io/socket.io.js"></script>
+
+    <!-- Styles -->
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <!-- Background Effects -->
+    <div class="bg-effects">
+        <div class="gradient-orb orb-1"></div>
+        <div class="gradient-orb orb-2"></div>
+        <div class="gradient-orb orb-3"></div>
+        <div class="grid-pattern"></div>
+    </div>
+
+    <!-- Mode Selection Screen -->
+    <div class="screen" id="modeScreen">
+        <div class="mode-container">
+            <div class="mode-header">
+                <div class="mode-logo">
+                    <span class="logo-icon">⬡</span>
+                    <h1>CARO PRO</h1>
+                </div>
+                <p class="mode-subtitle">Chọn chế độ chơi</p>
+            </div>
+
+            <div class="mode-options">
+                <button class="mode-card" id="aiModeBtn">
+                    <div class="mode-icon">🤖</div>
+                    <div class="mode-info">
+                        <h3>Chơi với AI</h3>
+                        <p>Thách đấu trí tuệ nhân tạo</p>
+                    </div>
+                </button>
+
+                <button class="mode-card" id="createRoomBtn">
+                    <div class="mode-icon">🎮</div>
+                    <div class="mode-info">
+                        <h3>Tạo Phòng</h3>
+                        <p>Tạo phòng và mời bạn bè</p>
+                    </div>
+                </button>
+
+                <button class="mode-card" id="joinRoomBtn">
+                    <div class="mode-icon">🌐</div>
+                    <div class="mode-info">
+                        <h3>Vào Phòng</h3>
+                        <p>Nhập mã phòng để tham gia</p>
+                    </div>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Waiting Room Screen -->
+    <div class="screen hidden" id="waitingScreen">
+        <div class="waiting-container">
+            <h2>🎮 Phòng Chờ</h2>
+            <div class="room-code-display">
+                <span class="room-label">Mã phòng:</span>
+                <span class="room-code" id="roomCodeDisplay">------</span>
+                <button class="copy-btn" id="copyCodeBtn" title="Copy mã phòng">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                    </svg>
+                </button>
+            </div>
+            <div class="waiting-status">
+                <div class="spinner"></div>
+                <p>Đang chờ đối thủ...</p>
+            </div>
+            <p class="share-hint">Chia sẻ mã phòng cho bạn bè để chơi cùng!</p>
+            <button class="btn btn-secondary" id="cancelWaitBtn">Hủy</button>
+        </div>
+    </div>
+
+    <!-- Join Room Screen -->
+    <div class="screen hidden" id="joinScreen">
+        <div class="join-container">
+            <h2>🌐 Vào Phòng</h2>
+            <p>Nhập mã phòng 6 ký tự</p>
+            <input type="text" class="room-input" id="roomCodeInput" maxlength="6" placeholder="VD: ABC123"
+                autocomplete="off">
+            <p class="error-message hidden" id="joinError"></p>
+            <div class="join-actions">
+                <button class="btn btn-secondary" id="backToModeBtn">Quay lại</button>
+                <button class="btn btn-primary" id="confirmJoinBtn">Vào phòng</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Game Screen -->
+    <div class="screen hidden" id="gameScreen">
+        <div class="container">
+            <!-- Header -->
+            <header class="header">
+                <button id="backBtn" class="icon-btn" aria-label="Quay lại">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M19 12H5M12 19l-7-7 7-7"></path>
+                    </svg>
+                </button>
+                <h1 class="logo">
+                    <span class="logo-icon">⬡</span>
+                    CARO PRO
+                </h1>
+                <div class="header-actions">
+                    <div class="online-badge hidden" id="onlineBadge">
+                        <span class="badge-dot"></span>
+                        <span id="roomCodeBadge">ONLINE</span>
+                    </div>
+                    <button id="settingsBtn" class="icon-btn" aria-label="Cài đặt">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <circle cx="12" cy="12" r="3"></circle>
+                            <path
+                                d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z">
+                            </path>
+                        </svg>
+                    </button>
+                </div>
+            </header>
+
+            <!-- Game Stats -->
+            <div class="game-stats">
+                <div class="stat-card player-x">
+                    <div class="stat-icon">✕</div>
+                    <div class="stat-info">
+                        <span class="stat-label" id="playerXLabel">Bạn</span>
+                        <span class="stat-value" id="scoreX">0</span>
+                    </div>
+                </div>
+                <div class="stat-card vs">
+                    <span class="vs-text">VS</span>
+                    <div class="timer" id="timer">00:00</div>
+                </div>
+                <div class="stat-card player-o">
+                    <div class="stat-icon">○</div>
+                    <div class="stat-info">
+                        <span class="stat-label" id="playerOLabel">AI</span>
+                        <span class="stat-value" id="scoreO">0</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Turn Indicator -->
+            <div class="turn-indicator">
+                <div class="turn-content" id="turnIndicator">
+                    <span class="turn-symbol">✕</span>
+                    <span class="turn-text">Lượt của bạn</span>
+                </div>
+            </div>
+
+            <!-- Game Board Container -->
+            <div class="board-container">
+                <div class="board-wrapper">
+                    <div class="board" id="board"></div>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="actions">
+                <button id="newGameBtn" class="btn btn-primary">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
+                        <path d="M3 3v5h5"></path>
+                        <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"></path>
+                        <path d="M16 21h5v-5"></path>
+                    </svg>
+                    Ván mới
+                </button>
+                <button id="undoBtn" class="btn btn-secondary">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M3 7v6h6"></path>
+                        <path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"></path>
+                    </svg>
+                    Hoàn tác
+                </button>
+            </div>
+
+            <!-- Difficulty Selector (AI mode only) -->
+            <div class="difficulty-selector" id="difficultySelector">
+                <span class="difficulty-label">Độ khó AI:</span>
+                <div class="difficulty-options">
+                    <button class="difficulty-btn" data-level="easy">Dễ</button>
+                    <button class="difficulty-btn active" data-level="medium">Trung bình</button>
+                    <button class="difficulty-btn" data-level="hard">Khó</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Win Modal -->
+    <div class="modal" id="winModal">
+        <div class="modal-content">
+            <div class="modal-icon" id="modalIcon">🎉</div>
+            <h2 class="modal-title" id="modalTitle">Chúc mừng!</h2>
+            <p class="modal-message" id="modalMessage">Bạn đã chiến thắng!</p>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" id="exitGameBtn">Thoát</button>
+                <button class="btn btn-primary" id="playAgainBtn">Chơi lại</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div class="modal" id="settingsModal">
+        <div class="modal-content settings-content">
+            <h2 class="modal-title">⚙️ Cài đặt</h2>
+            <div class="settings-group">
+                <label class="setting-item">
+                    <span>Kích thước bàn cờ</span>
+                    <select id="boardSizeSelect">
+                        <option value="10">10 × 10</option>
+                        <option value="15" selected>15 × 15</option>
+                        <option value="19">19 × 19</option>
+                    </select>
+                </label>
+                <label class="setting-item">
+                    <span>Âm thanh</span>
+                    <input type="checkbox" id="soundToggle" checked>
+                </label>
+                <label class="setting-item">
+                    <span>Rung (điện thoại)</span>
+                    <input type="checkbox" id="vibrationToggle" checked>
+                </label>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" id="closeSettingsBtn">Đóng</button>
+                <button class="btn btn-primary" id="saveSettingsBtn">Lưu</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Opponent Left Modal -->
+    <div class="modal" id="opponentLeftModal">
+        <div class="modal-content">
+            <div class="modal-icon">😢</div>
+            <h2 class="modal-title">Đối thủ rời phòng</h2>
+            <p class="modal-message">Đối thủ đã ngắt kết nối khỏi trận đấu.</p>
+            <div class="modal-actions">
+                <button class="btn btn-primary" id="returnToMenuBtn">Về menu</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Install PWA Banner -->
+    <div class="install-banner" id="installBanner">
+        <div class="install-content">
+            <span>📱 Cài đặt app để chơi offline!</span>
+            <button class="btn btn-small" id="installBtn">Cài đặt</button>
+            <button class="close-banner" id="closeBanner">×</button>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="game.js"></script>
+    <script src="ai.js"></script>
+    <script src="online.js"></script>
+    <script src="app.js"></script>
+</body>
+
+</html>
