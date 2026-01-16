@@ -19,10 +19,23 @@ class OnlineClient {
 
     connect() {
         return new Promise((resolve, reject) => {
-            // Connect to server (same origin)
-            this.socket = io();
+            // Connect to server with timeout for Render cold start
+            this.socket = io({
+                timeout: 30000, // 30 seconds timeout for Render cold start
+                reconnectionAttempts: 3,
+                reconnectionDelay: 2000
+            });
+
+            // Set a connection timeout
+            const connectionTimeout = setTimeout(() => {
+                if (!this.isConnected) {
+                    this.socket.disconnect();
+                    reject(new Error('Kết nối timeout. Server có thể đang khởi động, vui lòng thử lại.'));
+                }
+            }, 35000);
 
             this.socket.on('connect', () => {
+                clearTimeout(connectionTimeout);
                 console.log('Connected to server');
                 this.isConnected = true;
                 resolve();
@@ -31,7 +44,7 @@ class OnlineClient {
             this.socket.on('connect_error', (error) => {
                 console.error('Connection error:', error);
                 this.isConnected = false;
-                reject(error);
+                // Don't reject immediately, let timeout handle it for retry behavior
             });
 
             this.socket.on('disconnect', () => {
