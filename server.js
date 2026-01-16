@@ -325,15 +325,9 @@ io.on('connection', (socket) => {
 
 // Start server
 const PORT = process.env.PORT || 3000;
-httpServer.listen(PORT, () => {
-    console.log(`
-╔═══════════════════════════════════════════╗
-║         🎮 CARO PRO ONLINE SERVER         ║
-╠═══════════════════════════════════════════╣
-║  Server running at:                       ║
-║  → http://localhost:${PORT}                   ║
-║                                           ║
-║  Share this with friends to play online!  ║
-╚═══════════════════════════════════════════╝
-    `);
+const HOST = '0.0.0.0';
+
+httpServer.listen(PORT, HOST, () => {
+    console.log(`Server running on port ${PORT}`);
 });
+
